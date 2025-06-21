@@ -1,0 +1,10 @@
+server.name: kibana
+server.port: 5601
+server.host: "0.0.0.0"
+server.publicBaseUrl: "http://192.168.56.200:5601"
+elasticsearch.hosts: ["http://localhost:9200"]
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "{{ kibana_system_password }}"
+elasticsearch.ssl.verificationMode: none
+telemetry.enabled: false
+xpack.encryptedSavedObjects.encryptionKey: "AHiogxFTmNnnxjrKhg0zzwplBo/BtXUGyQGQtiLlSgQ="

@@ -1,0 +1,8 @@
+- name: Deploy ELK Stack and Beats
+  hosts: elk
+  become: true
+  roles:
+    - ./roles/elasticsearch
+    - ./roles/kibana
+    - ./roles/logstash
+    - ./roles/beats

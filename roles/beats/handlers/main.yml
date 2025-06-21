@@ -1,0 +1,14 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for beats
+- name: Restart Metricbeat
+  ansible.builtin.systemd:
+    name: metricbeat
+    state: restarted
+    enabled: true
+
+- name: Restart Filebeat
+  ansible.builtin.systemd:
+    name: filebeat
+    state: restarted
+    enabled: true

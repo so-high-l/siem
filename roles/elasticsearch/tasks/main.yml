@@ -1,0 +1,85 @@
+---
+- name: Install dependencies
+  apt:
+    name:
+      - apt-transport-https
+      - openjdk-21-jdk
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Add Elasticsearch GPG key
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  become: true
+
+- name: Add Elasticsearch APT repo
+  apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/8.x/apt stable main"
+    state: present
+    filename: elasticsearch
+  become: true
+
+- name: Install Elasticsearch
+  apt:
+    name: elasticsearch
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Copy elasticsearch.yml
+  template:
+    src: elasticsearch.yml.j2
+    dest: /etc/elasticsearch/elasticsearch.yml
+    owner: root
+    group: elasticsearch
+    mode: 0660
+  become: true
+
+- name: Set JVM heap size to 50% of system memory
+  lineinfile:
+    path: /etc/elasticsearch/jvm.options
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    create: yes
+  loop:
+    - { regexp: "^-Xms", line: "-Xms{{ (ansible_memtotal_mb * 0.5) | int }}m" }
+    - { regexp: "^-Xmx", line: "-Xmx{{ (ansible_memtotal_mb * 0.5) | int }}m" }
+  become: true
+
+- name: Ensure Elasticsearch directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+  loop:
+    - /var/lib/elasticsearch
+    - /var/log/elasticsearch
+  become: true
+
+- name: Enable memory locking in systemd
+  lineinfile:
+    path: /etc/systemd/system/elasticsearch.service.d/override.conf
+    create: yes
+    line: |
+      [Service]
+      LimitMEMLOCK=infinity
+  become: true
+
+- name: Reload systemd
+  command: systemctl daemon-reexec
+  become: true
+
+- name: Enable and start Elasticsearch
+  systemd:
+    name: elasticsearch
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+
+- name: Generate TLS certificates
+  import_tasks: generate_certs.yml

@@ -1,0 +1,46 @@
+- name: Install Logstash
+  apt:
+    name: logstash
+    state: present
+    update_cache: yes
+
+- name: Enable and start Logstash
+  systemd:
+    name: logstash
+    enabled: yes
+    state: started
+
+- name: Ensure Logstash pipeline directory exists
+  file:
+    path: /etc/logstash/conf.d
+    state: directory
+    owner: logstash
+    group: logstash
+    mode: "0755"
+
+- name: Copy Logstash pipeline configuration files
+  copy:
+    src: "pipelines/"
+    dest: "/etc/logstash/conf.d/"
+    owner: logstash
+    group: logstash
+    mode: "0644"
+  notify: Restart Logstash
+
+- name: Copy Logstash pipeline registry
+  template:
+    src: pipelines.yml.j2
+    dest: /etc/logstash/pipelines.yml
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Logstash
+
+- name: Deploy logstash.yml config
+  template:
+    src: logstash.yml.j2
+    dest: /etc/logstash/logstash.yml
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Logstash

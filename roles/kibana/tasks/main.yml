@@ -1,0 +1,23 @@
+---
+- name: Install Kibana
+  apt:
+    name: kibana
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Copy Kibana config
+  template:
+    src: kibana.yml.j2
+    dest: /etc/kibana/kibana.yml
+    owner: root
+    group: kibana
+    mode: 0660
+  become: true
+
+- name: Enable and start Kibana
+  systemd:
+    name: kibana
+    enabled: yes
+    state: started
+  become: true

@@ -1,0 +1,25 @@
+- name: Install Filebeat and Metricbeat
+  apt:
+    name:
+      - filebeat
+      - metricbeat
+    state: present
+    update_cache: yes
+
+- name: Enable and start Filebeat
+  systemd:
+    name: filebeat
+    enabled: yes
+    state: started
+
+- name: Enable and start Metricbeat
+  systemd:
+    name: metricbeat
+    enabled: yes
+    state: started
+
+- name: Configure Metricbeat output
+  import_tasks: configure_metricbeat.yml
+
+- name: Configure Filebeat output
+  import_tasks: configure_filebeat.yml

@@ -1,0 +1,11 @@
+- name: Configure Metricbeat to use Elasticsearch credentials
+  blockinfile:
+    path: /etc/metricbeat/metricbeat.yml
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - Elasticsearch Output"
+    block: |
+      output.elasticsearch:
+        hosts: ["http://localhost:9200"]
+        username: "elastic"
+        password: "{{ elastic_password }}"
+        ssl.verification_mode: none
+  notify: Restart Metricbeat
