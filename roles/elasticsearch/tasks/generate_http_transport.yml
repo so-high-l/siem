@@ -1,0 +1,61 @@
+- name: Ensure certs base path exists
+  file:
+    path: /etc/elasticsearch/certs
+    state: directory
+    mode: "0750"
+    owner: root
+    group: elasticsearch
+  become: true
+
+- name: Create certs config file (instance.yml)
+  copy:
+    content: |
+      instances:
+        - name: elasticsearch.local
+          dns: [ "elasticsearch.local", "localhost", "127.0.0.1" ]
+    dest: /etc/elasticsearch/certs/instance.yml
+    owner: root
+    group: elasticsearch
+    mode: "0644"
+  become: true
+
+- name: Generate certificates for HTTP and transport
+  command: >
+    /usr/share/elasticsearch/bin/elasticsearch-certutil cert
+    --silent
+    --pem
+    --in /etc/elasticsearch/certs/instance.yml
+    --ca-cert /etc/elasticsearch/certs/ca/ca.crt
+    --ca-key /etc/elasticsearch/certs/ca/ca.key
+    --name elasticsearch.local
+    --dns elasticsearch.local,localhost
+    --out /etc/elasticsearch/certs/bundle.zip
+  args:
+    creates: /etc/elasticsearch/certs/bundle.zip
+  become: true
+
+- name: Unzip HTTP and transport certs
+  unarchive:
+    src: /etc/elasticsearch/certs/bundle.zip
+    dest: /etc/elasticsearch/certs/
+    remote_src: true
+    extra_opts: ["-j"]
+  become: true
+
+- name: Move HTTP certs to dedicated folder
+  shell: |
+    mkdir -p /etc/elasticsearch/certs/http /etc/elasticsearch/certs/transport
+    mv /etc/elasticsearch/certs/elasticsearch.local.crt /etc/elasticsearch/certs/http/
+    mv /etc/elasticsearch/certs/elasticsearch.local.key /etc/elasticsearch/certs/http/
+    cp /etc/elasticsearch/certs/http/elasticsearch.local.crt /etc/elasticsearch/certs/transport/transport.crt
+    cp /etc/elasticsearch/certs/http/elasticsearch.local.key /etc/elasticsearch/certs/transport/transport.key
+  become: true
+
+- name: Clean up zip and instance.yml
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/elasticsearch/certs/instance.yml
+    - /etc/elasticsearch/certs/bundle.zip
+  become: true

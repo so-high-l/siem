@@ -1,0 +1,33 @@
+- name: Create logstash_writer role
+  uri:
+    url: "https://elasticsearch.local:9200/_security/role/logstash_writer"
+    method: PUT
+    user: elastic
+    password: "{{ elastic_password }}"
+    body_format: json
+    headers:
+      Content-Type: "application/json"
+    body:
+      cluster: ["monitor", "manage_index_templates"]
+      indices:
+        - names: ["*"]
+          privileges: ["write", "create", "create_index"]
+    validate_certs: yes
+    ca_path: /etc/elasticsearch/certs/ca/ca.crt
+
+- name: Create logstash_internal user
+  uri:
+    url: "https://elasticsearch.local:9200/_security/user/logstash_internal"
+    method: POST
+    user: elastic
+    password: "{{ elastic_password }}"
+    body_format: json
+    headers:
+      Content-Type: "application/json"
+    body:
+      password: "{{ logstash_password }}"
+      roles: ["logstash_writer"]
+      full_name: "Logstash Internal User"
+    validate_certs: yes
+    ca_path: /etc/elasticsearch/certs/ca/ca.crt
+

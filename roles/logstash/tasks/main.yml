@@ -18,12 +18,12 @@
     group: logstash
     mode: "0755"
 
-- name: Copy Logstash pipeline configuration files
-  copy:
-    src: "pipelines/"
-    dest: "/etc/logstash/conf.d/"
-    owner: logstash
-    group: logstash
+- name: Deploy Logstash Backend pipeline configuration
+  template:
+    src: backend-pipeline.conf.j2
+    dest: /etc/logstash/conf.d/backend-pipeline.conf
+    owner: root
+    group: root
     mode: "0644"
   notify: Restart Logstash
 

@@ -4,4 +4,5 @@ path.logs: /var/log/logstash
 xpack.monitoring.enabled: true
 xpack.monitoring.elasticsearch.username: "elastic"
 xpack.monitoring.elasticsearch.password: "{{ elastic_password }}"
-xpack.monitoring.elasticsearch.hosts: ["http://127.0.0.1:9200"]
+xpack.monitoring.elasticsearch.hosts: ["https://elasticsearch.local:9200"]
+xpack.monitoring.elasticsearch.ssl.certificate_authority: "/etc/logstash/certs/ca.crt"

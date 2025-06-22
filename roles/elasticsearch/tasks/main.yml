@@ -1,8 +1,10 @@
+# roles/elasticsearch/tasks/main.yml
 ---
 - name: Install dependencies
   apt:
     name:
       - apt-transport-https
+      - unzip
       - openjdk-21-jdk
     state: present
     update_cache: yes
@@ -73,6 +75,21 @@
   command: systemctl daemon-reexec
   become: true
 
+- name: Add elasticsearch.local to /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 elasticsearch.local"
+    state: present
+
+- name: Generate CA certificate
+  import_tasks: generate_ca.yml
+
+- name: Generate HTTP and transport certificates
+  import_tasks: generate_http_transport.yml
+
+- name: Distribute TLS certs to Kibana and Logstash
+  import_tasks: distribute_certs.yml
+
 - name: Enable and start Elasticsearch
   systemd:
     name: elasticsearch
@@ -81,5 +98,5 @@
     daemon_reload: true
   become: true
 
-- name: Generate TLS certificates
-  import_tasks: generate_certs.yml
+- name: Create Logstash Writer Role and User in Elasticsearch
+  import_tasks: create_logstash_user.yml

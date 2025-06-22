@@ -3,9 +3,11 @@
     path: /etc/filebeat/filebeat.yml
     marker: "# {mark} ANSIBLE MANAGED BLOCK - Elasticsearch Output"
     block: |
-      output.elasticsearch:
-        hosts: ["http://localhost:9200"]
-        username: "elastic"
-        password: "{{ elastic_password }}"
-        ssl.verification_mode: none
+      # output.elasticsearch:
+      #   hosts: ["elasticsearch.local:9200"]
+      #   protocol: "https"
+      #   username: "elastic"
+      #   password: "{{ elastic_password }}"
+      #   ssl.certificate_authorities: ["/etc/filebeat/certs/ca.crt"]
+      #   ssl.verification_mode: full
   notify: Restart Filebeat

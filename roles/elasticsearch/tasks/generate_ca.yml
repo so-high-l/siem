@@ -1,0 +1,39 @@
+- name: Ensure base cert directory exists
+  file:
+    path: /etc/elasticsearch/certs/ca
+    state: directory
+    owner: root
+    group: elasticsearch
+    mode: "0750"
+  become: true
+
+- name: Generate CA certificate (only if missing)
+  command: >
+    /usr/share/elasticsearch/bin/elasticsearch-certutil ca
+    --silent
+    --pem
+    --out /etc/elasticsearch/certs/ca/elastic-stack-ca.zip
+  args:
+    creates: /etc/elasticsearch/certs/ca/elastic-stack-ca.zip
+  become: true
+
+- name: Install unzip (required to extract certs)
+  apt:
+    name: unzip
+    state: present
+    update_cache: true
+  become: true
+
+- name: Unzip CA certs
+  unarchive:
+    src: /etc/elasticsearch/certs/ca/elastic-stack-ca.zip
+    dest: /etc/elasticsearch/certs/ca/
+    remote_src: true
+    extra_opts: ["-j"]
+  become: true
+
+- name: Clean up CA zip
+  file:
+    path: /etc/elasticsearch/certs/ca/elastic-stack-ca.zip
+    state: absent
+  become: true

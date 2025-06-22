@@ -4,8 +4,10 @@
     marker: "# {mark} ANSIBLE MANAGED BLOCK - Elasticsearch Output"
     block: |
       output.elasticsearch:
-        hosts: ["http://localhost:9200"]
+        hosts: ["elasticsearch.local:9200"]
+        protocol: "https"
         username: "elastic"
         password: "{{ elastic_password }}"
-        ssl.verification_mode: none
+        ssl.certificate_authorities: ["/etc/metricbeat/certs/ca.crt"]
+        ssl.verification_mode: full
   notify: Restart Metricbeat

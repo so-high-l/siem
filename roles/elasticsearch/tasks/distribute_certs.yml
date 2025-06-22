@@ -1,0 +1,134 @@
+- name: Ensure Kibana cert directory exists
+  file:
+    path: /etc/kibana/certs
+    state: directory
+    owner: root
+    group: kibana
+    mode: "0755"
+  become: true
+
+- name: Copy HTTP cert to Kibana
+  copy:
+    src: /etc/elasticsearch/certs/http/elasticsearch.local.crt
+    dest: /etc/kibana/certs/http.crt
+    remote_src: true
+    owner: root
+    group: kibana
+    mode: "0644"
+  become: true
+
+- name: Copy HTTP key to Kibana
+  copy:
+    src: /etc/elasticsearch/certs/http/elasticsearch.local.key
+    dest: /etc/kibana/certs/http.key
+    remote_src: true
+    owner: root
+    group: kibana
+    mode: "0640"
+  become: true
+
+- name: Copy CA cert to Kibana
+  copy:
+    src: /etc/elasticsearch/certs/ca/ca.crt
+    dest: /etc/kibana/certs/ca.crt
+    remote_src: true
+    owner: root
+    group: kibana
+    mode: "0644"
+  become: true
+
+- name: Ensure Logstash cert directory exists
+  file:
+    path: /etc/logstash/certs
+    state: directory
+    owner: root
+    group: logstash
+    mode: "0755"
+  become: true
+- name: Copy HTTP cert to Logstash
+  copy:
+    src: /etc/elasticsearch/certs/http/elasticsearch.local.crt
+    dest: /etc/logstash/certs/http.crt
+    remote_src: true
+    owner: root
+    group: logstash
+    mode: "0644"
+  become: true
+
+- name: Copy HTTP key to Logstash
+  copy:
+    src: /etc/elasticsearch/certs/http/elasticsearch.local.key
+    dest: /etc/logstash/certs/http.key
+    remote_src: true
+    owner: root
+    group: logstash
+    mode: "0640"
+  become: true
+
+- name: Copy CA cert to Logstash
+  copy:
+    src: /etc/elasticsearch/certs/ca/ca.crt
+    dest: /etc/logstash/certs/ca.crt
+    remote_src: true
+    owner: root
+    group: logstash
+    mode: "0644"
+  become: true
+
+- name: Ensure Metricbeat cert directory exists
+  file:
+    path: /etc/metricbeat/certs
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Copy CA cert to Metricbeat
+  copy:
+    src: /etc/elasticsearch/certs/ca/ca.crt
+    dest: /etc/metricbeat/certs/ca.crt
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+
+- name: Ensure Filebeat cert directory exists
+  file:
+    path: /etc/filebeat/certs
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Copy CA cert to Filebeat
+  copy:
+    src: /etc/elasticsearch/certs/ca/ca.crt
+    dest: /etc/filebeat/certs/ca.crt
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+
+- name: Copy HTTP cert to Filebeat
+  copy:
+    src: /etc/elasticsearch/certs/http/elasticsearch.local.crt
+    dest: /etc/filebeat/certs/http.crt
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+
+- name: Copy HTTP key to Filebeat
+  copy:
+    src: /etc/elasticsearch/certs/http/elasticsearch.local.key
+    dest: /etc/filebeat/certs/http.key
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0640"
+  become: true

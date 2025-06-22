@@ -1,6 +1,9 @@
 input {
   beats {
     port => 5044
+    ssl => true
+    ssl_certificate => "/etc/logstash/certs/http.crt"
+    ssl_key => "/etc/logstash/certs/http.key"
   }
 }
 
@@ -169,24 +172,31 @@ filter {
 output {
   if [logger] =~ /^sqlalchemy/ {
     elasticsearch {
-      hosts => ["http://192.168.56.200:9200"]
+      hosts => ["https://elasticsearch.local:9200"]
       index => "sqlalchemy-logs-%{+YYYY.MM.dd}"
-      user => "elastic"
-      password => "WghaQZlbCKhGnCiQJDJN"
+      user => "logstash_internal"
+      password => "{{ logstash_password }}"
+      ssl => true
+      cacert => "/etc/logstash/certs/ca.crt"
     }
   } else if [logger] == "werkzeug" {
     elasticsearch {
-      hosts => ["http://192.168.56.200:9200"]
+      hosts => ["https://elasticsearch.local:9200"]
       index => "werkzeug-logs-%{+YYYY.MM.dd}"
-      user => "elastic"
-      password => "WghaQZlbCKhGnCiQJDJN"
+      user => "logstash_internal"
+      password => "{{ logstash_password }}"
+      ssl_certificate_verification => true
+      ssl => true
+      cacert => "/etc/logstash/certs/ca.crt"
     }
   } else {
     elasticsearch {
-      hosts => ["http://192.168.56.200:9200"]
+      hosts => ["https://elasticsearch.local:9200"]
       index => "unclassified-logs-%{+YYYY.MM.dd}"
-      user => "elastic"
-      password => "WghaQZlbCKhGnCiQJDJN"
+      user => "logstash_internal"
+      password => "{{ logstash_password }}"
+      ssl => true
+      cacert => "/etc/logstash/certs/ca.crt"
     }
   }
 }
