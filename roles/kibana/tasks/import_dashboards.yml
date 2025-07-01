@@ -1,0 +1,51 @@
+---
+- name: Ensure marker directory exists
+  file:
+    path: /var/lib/kibana
+    state: directory
+    owner: kibana
+    group: kibana
+    mode: "0755"
+
+- name: Check if dashboards were already imported
+  stat:
+    path: /var/lib/kibana/.dashboards_imported
+  register: dashboards_imported
+
+- name: Check if dashboard already exists
+  uri:
+    url: "https://localhost:5601/api/saved_objects/dashboard/7f11785c-3d1d-479a-974f-6d97a0d1194f"
+    method: GET
+    user: "elastic"
+    password: "{{elastic_password}}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [200, 404]
+    return_content: false
+    headers:
+      kbn-xsrf: true
+  register: dashboard_check
+
+- name: Copy dashboard NDJSON file to remote
+  copy:
+    src: dashboard.ndjson
+    dest: /tmp/dashboard.ndjson
+    mode: "0644"
+
+- name: Import dashboards into Kibana
+  command: >
+    curl -s -k -u elastic:"{{elastic_password}}"
+    -H "kbn-xsrf: true"
+    -F "file=@/tmp/dashboard.ndjson"
+    https://localhost:5601/api/saved_objects/_import?overwrite=true
+  register: dashboard_import
+  changed_when: "'success' in dashboard_import.stdout or 'successCount' in dashboard_import.stdout"
+
+- name: Debug dashboard import result
+  debug:
+    var: dashboard_import.stdout
+
+- name: Clean up imported dashboard file
+  file:
+    path: /tmp/dashboard.ndjson
+    state: absent
