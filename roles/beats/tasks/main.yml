@@ -6,6 +6,12 @@
     state: present
     update_cache: yes
 
+- name: Wait for certificates to be distributed
+  wait_for:
+    path: /etc/metricbeat/certs/ca.crt
+    timeout: 30
+  become: true
+
 - name: Deploy secure Filebeat config
   template:
     src: filebeat.yml.j2

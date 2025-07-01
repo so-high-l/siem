@@ -18,14 +18,14 @@
 
 - name: Add Elasticsearch APT repo
   apt_repository:
-    repo: "deb https://artifacts.elastic.co/packages/8.x/apt stable main"
+    repo: "deb https://artifacts.elastic.co/packages/9.x/apt stable main"
     state: present
     filename: elasticsearch
   become: true
 
 - name: Install Elasticsearch
   apt:
-    name: elasticsearch
+    name: elasticsearch=9.0.0
     state: present
     update_cache: yes
   become: true
@@ -97,6 +97,32 @@
     state: started
     daemon_reload: true
   become: true
+
+# Set up built-in user passwords if not already set
+- name: Check if elastic password is already set
+  uri:
+    url: https://localhost:9200
+    user: elastic
+    password: "{{ elastic_password }}"
+    validate_certs: false
+    status_code: 200
+  register: elastic_pw_check
+  ignore_errors: true
+
+- name: Run elasticsearch-setup-passwords if password is not set
+  shell: |
+    echo -e "{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}" | /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive --batch --url https://localhost:9200
+  args:
+    creates: /etc/elasticsearch/.passwords_set
+  become: true
+  when: elastic_pw_check.failed
+
+- name: Create marker file after setting passwords
+  file:
+    path: /etc/elasticsearch/.passwords_set
+    state: touch
+  become: true
+  when: elastic_pw_check.failed
 
 - name: Create Logstash Writer Role and User in Elasticsearch
   import_tasks: create_logstash_user.yml
