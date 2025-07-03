@@ -1,0 +1,24 @@
+name: 5xx Server Error Detected
+type: frequency
+index: werkzeug-logs-*
+
+num_events: 10
+
+timeframe:
+  minutes: 5
+
+filter:
+  - range:
+      status_code:
+        gte: 500
+        lte: 599
+
+alert:
+  - email
+
+email:
+  - {{ target_email }}
+
+smtp_host: {{ smtp_host }}
+smtp_port: {{ smtp_port }}
+smtp_auth_file: {{ smtp_auth_file }}

@@ -1,4 +1,4 @@
-- name: Deploy ELK Stack and Beats
+- name: Deploy ELK Stack, Beats, ElastAlert
   hosts: elk
   become: true
   roles:
@@ -6,3 +6,4 @@
     - ./roles/kibana
     - ./roles/logstash
     - ./roles/beats
+    - ./roles/elastalert

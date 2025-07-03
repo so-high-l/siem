@@ -95,7 +95,7 @@ filter {
   else if [logger] == "werkzeug" {
     grok {
       match => {
-        "log_content" => "%{IP:client_ip} - - \\[%{MONTHDAY}/%{MONTH}/%{YEAR} %{TIME:access_time}\\] \"%{WORD:method} %{URIPATHPARAM:request} HTTP/%{NUMBER:http_version}\" %{NUMBER:status_code} -"
+       "log_content" => '%{IP:client_ip} - - \[%{MONTHDAY}/%{MONTH}/%{YEAR} %{TIME:access_time}\] "(?<method>GET|POST|PUT|DELETE|PATCH|OPTIONS|HEAD) %{URIPATH:request}(?:\?%{GREEDYDATA:query})? HTTP/%{NUMBER:http_version}" %{NUMBER:status_code} -'
       }
       tag_on_failure => ["_grokparsefailure_werkzeug"]
       add_tag => ["werkzeug"]

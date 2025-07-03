@@ -1,0 +1,7 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for elastalert
+- name: Restart elastalert
+  systemd:
+    name: elastalert
+    state: restarted

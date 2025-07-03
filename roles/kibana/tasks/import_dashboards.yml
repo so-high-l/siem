@@ -17,14 +17,13 @@
     url: "https://localhost:5601/api/saved_objects/dashboard/7f11785c-3d1d-479a-974f-6d97a0d1194f"
     method: GET
     user: "elastic"
-    password: "{{elastic_password}}"
-    force_basic_auth: true
-    validate_certs: false
-    status_code: [200, 404]
-    return_content: false
+    password: "{{ elastic_password }}"
+    force_basic_auth: yes
     headers:
       kbn-xsrf: true
-  register: dashboard_check
+    validate_certs: false
+    status_code: [200, 404]
+  register: kibana_dashboard_check
 
 - name: Copy dashboard NDJSON file to remote
   copy:
@@ -34,7 +33,7 @@
 
 - name: Import dashboards into Kibana
   command: >
-    curl -s -k -u elastic:"{{elastic_password}}"
+    curl -s -k -u elastic:"{{ elastic_password }}"
     -H "kbn-xsrf: true"
     -F "file=@/tmp/dashboard.ndjson"
     https://localhost:5601/api/saved_objects/_import?overwrite=true

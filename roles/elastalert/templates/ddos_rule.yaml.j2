@@ -1,0 +1,19 @@
+name: API Request Flooding Detected
+
+type: frequency
+index: werkzeug-logs-*
+num_events: 1000
+timeframe:
+  minutes: 1
+
+group_by: client_ip
+
+alert:
+  - email
+  
+email:
+  - {{ target_email }}
+
+smtp_host: {{ smtp_host }}
+smtp_port: {{ smtp_port }}
+smtp_auth_file: {{ smtp_auth_file }}

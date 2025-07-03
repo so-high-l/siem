@@ -1,0 +1,15 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for elastalert
+elastalert_version: "v2.25.0"
+elastalert_dir: "/opt/elastalert"
+elastalert_virtualenv: "/opt/elastalert/venv"
+elastalert_config_file: "/opt/elastalert/config.yaml"
+elastalert_rules_dir: "/opt/elastalert/custom_rules"
+elasticsearch_host: "localhost"
+elasticsearch_port: 9200
+smtp_auth_file: "/opt/elastalert/smtp_auth.yaml"
+smtp_host: "smtp.gmail.com"
+smtp_port: 587  
+smtp_user: "elmahdanisouhail@gmail.com"
+target_email: "elmahdanisouhailpro@gmail.com"

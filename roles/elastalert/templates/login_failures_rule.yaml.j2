@@ -1,0 +1,25 @@
+name: UserAPI Brute Force Login Attempt Detected
+
+type: frequency
+index: userapi-logs-*
+num_events: 20
+timeframe:
+  minutes: 3
+
+filter:
+  - term:
+      status_code: "401"
+  - term:
+      request_path.keyword: "/api/auth/login"
+
+group_by: client_ip
+
+alert:
+  - email
+  
+email:
+  - {{ target_email }}
+
+smtp_host: {{ smtp_host }}
+smtp_port: {{ smtp_port }}
+smtp_auth_file: {{ smtp_auth_file }}

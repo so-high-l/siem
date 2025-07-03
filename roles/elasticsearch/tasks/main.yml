@@ -101,28 +101,33 @@
 # Set up built-in user passwords if not already set
 - name: Check if elastic password is already set
   uri:
-    url: https://localhost:9200
-    user: elastic
+    url: "https://localhost:9200/_security/_authenticate"
+    method: GET
+    user: "elastic"
     password: "{{ elastic_password }}"
     validate_certs: false
     status_code: 200
   register: elastic_pw_check
-  ignore_errors: true
+  failed_when: false
+  changed_when: false
 
 - name: Run elasticsearch-setup-passwords if password is not set
   shell: |
-    echo -e "{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}" | /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive --batch --url https://localhost:9200
+    echo -e '{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}' \
+    | /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive --batch --url https://localhost:9200
   args:
     creates: /etc/elasticsearch/.passwords_set
+  when: elastic_pw_check.status != 200
   become: true
-  when: elastic_pw_check.failed
+  register: setup_pw_result
+  notify: mark passwords as set
 
-- name: Create marker file after setting passwords
-  file:
-    path: /etc/elasticsearch/.passwords_set
-    state: touch
+- name: Mark that passwords have been set
+  copy:
+    content: "done"
+    dest: /etc/elasticsearch/.passwords_set
+  when: setup_pw_result is changed
   become: true
-  when: elastic_pw_check.failed
 
 - name: Create Logstash Writer Role and User in Elasticsearch
   import_tasks: create_logstash_user.yml

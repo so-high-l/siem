@@ -34,7 +34,7 @@
     url: "https://localhost:5601/api/status"
     method: GET
     user: "elastic"
-    password: "{{elastic_password}}"
+    password: "{{ elastic_password }}"
     force_basic_auth: true
     return_content: true
     validate_certs: false
@@ -43,6 +43,5 @@
   retries: 30
   delay: 10
   until: kibana_status.status == 200
-
-- name: Import Kibana dashboards
-  include_tasks: import_dashboards.yml
+# - name: Import Kibana dashboards
+#   include_tasks: import_dashboards.yml
