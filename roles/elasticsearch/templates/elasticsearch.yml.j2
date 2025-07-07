@@ -5,6 +5,10 @@ cluster.name: siem-cluster
 node.name: node-1
 discovery.type: single-node
 
+# Data and logs paths
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+
 bootstrap.memory_lock: true
 
 xpack.monitoring.collection.enabled: true

@@ -1,5 +1,23 @@
 ---
-- name: Add Kibana APT repo
+- name: Install dependencies (Ubuntu 22.04 compatible)
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - curl
+      - wget
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Add Elasticsearch GPG key for Kibana
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  become: true
+
+- name: Add Kibana APT repo (Ubuntu 22.04 compatible)
   apt_repository:
     repo: "deb https://artifacts.elastic.co/packages/9.x/apt stable main"
     state: present
@@ -8,7 +26,7 @@
 
 - name: Install Kibana
   apt:
-    name: kibana=9.0.0
+    name: kibana
     state: present
     update_cache: yes
   become: true
@@ -22,11 +40,24 @@
     mode: 0660
   become: true
 
+- name: Ensure Kibana directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: kibana
+    group: kibana
+    mode: 0755
+  loop:
+    - /var/lib/kibana
+    - /var/log/kibana
+  become: true
+
 - name: Enable and start Kibana
   systemd:
     name: kibana
     enabled: yes
     state: started
+    daemon_reload: yes
   become: true
 
 - name: Wait for Kibana to be up and running
@@ -43,5 +74,5 @@
   retries: 30
   delay: 10
   until: kibana_status.status == 200
-# - name: Import Kibana dashboards
-#   include_tasks: import_dashboards.yml
+- name: Import Kibana dashboards
+  include_tasks: import_dashboards.yml

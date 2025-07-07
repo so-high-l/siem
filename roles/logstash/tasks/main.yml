@@ -1,14 +1,42 @@
+- name: Install dependencies (Ubuntu 22.04 compatible)
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - curl
+      - wget
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Add Elasticsearch GPG key for Logstash
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  become: true
+
+- name: Add Elasticsearch APT repo for Logstash (Ubuntu 22.04 compatible)
+  apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/9.x/apt stable main"
+    state: present
+    filename: elasticsearch
+  become: true
+
 - name: Install Logstash
   apt:
     name: logstash
     state: present
     update_cache: yes
+  become: true
 
 - name: Enable and start Logstash
   systemd:
     name: logstash
     enabled: yes
     state: started
+    daemon_reload: yes
+  become: true
 
 - name: Ensure Logstash pipeline directory exists
   file:
@@ -17,6 +45,7 @@
     owner: logstash
     group: logstash
     mode: "0755"
+  become: true
 
 - name: Deploy Logstash Backend pipeline configuration
   template:
@@ -26,6 +55,7 @@
     group: root
     mode: "0644"
   notify: Restart Logstash
+  become: true
 
 - name: Copy Logstash pipeline registry
   template:
@@ -35,6 +65,7 @@
     group: root
     mode: "0644"
   notify: Restart Logstash
+  become: true
 
 - name: Deploy logstash.yml config
   template:
@@ -44,3 +75,4 @@
     group: root
     mode: "0644"
   notify: Restart Logstash
+  become: true

@@ -2,3 +2,9 @@
   systemd:
     name: elasticsearch
     state: restarted
+
+- name: mark passwords as set
+  copy:
+    content: "done"
+    dest: /etc/elasticsearch/.passwords_set
+  become: true

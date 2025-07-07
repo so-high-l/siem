@@ -1,3 +1,9 @@
+- name: Ensure Kibana group exists
+  group:
+    name: kibana
+    state: present
+  become: true
+
 - name: Ensure Kibana cert directory exists
   file:
     path: /etc/kibana/certs
@@ -35,6 +41,12 @@
     owner: root
     group: kibana
     mode: "0644"
+  become: true
+
+- name: Ensure Logstash group exists
+  group:
+    name: logstash
+    state: present
   become: true
 
 - name: Ensure Logstash cert directory exists

@@ -1,3 +1,28 @@
+- name: Install dependencies (Ubuntu 22.04 compatible)
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - curl
+      - wget
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Add Elasticsearch GPG key for Beats
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  become: true
+
+- name: Add Elasticsearch APT repo for Beats (Ubuntu 22.04 compatible)
+  apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/9.x/apt stable main"
+    state: present
+    filename: elasticsearch
+  become: true
+
 - name: Install Filebeat and Metricbeat
   apt:
     name:
@@ -5,6 +30,7 @@
       - metricbeat
     state: present
     update_cache: yes
+  become: true
 
 - name: Wait for certificates to be distributed
   wait_for:
@@ -20,18 +46,23 @@
     group: root
     mode: "0644"
   notify: Restart Filebeat
+  become: true
 
 - name: Enable and start Filebeat
   systemd:
     name: filebeat
     enabled: yes
     state: started
+    daemon_reload: yes
+  become: true
 
 - name: Enable and start Metricbeat
   systemd:
     name: metricbeat
     enabled: yes
     state: started
+    daemon_reload: yes
+  become: true
 
 - name: Configure Metricbeat output
   import_tasks: configure_metricbeat.yml

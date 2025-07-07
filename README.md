@@ -18,10 +18,121 @@ This project provides a fully automated deployment of a Security Information and
 **Deployment Targets:**
 
 - Any external Ubuntu-based server (tested on Ubuntu 20.04/22.04)
+- Local development with Vagrant (Ubuntu 20.04)
 
 ---
 
+## 🚀 Quick Start
 
+### For External Ubuntu Servers
+
+1. **Generate the ssh key for ansible to use**
+
+```bash
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com" -f ~/.ssh/siem_id_rsa
+```
+
+This creates:
+
+- Private key: ~/.ssh/siem_id_rsa
+- Public key: ~/.ssh/siem_id_rsa.pub
+
+2. **Edit inventories/hosts.ini**
+
+Add the private ssh key generated in step 1
+Example:
+host_name ansible_host=external-server-ip ansible_user=user ansible_ssh_private_key_file=~/.ssh/siem_id_rsa
+
+3. **Set variables and secrets:**
+   Needed variables to run the setup:
+
+- elastic_password
+- kibana_system_password
+- logstash_system_password
+- kibana_encryption_key
+- logstash_password
+- smtp_password
+
+```bash
+# Command to encrypt a variable
+ansible-vault encrypt_string 'your_secret_value' --name your_variable_name
+```
+
+- Store secrets in `group_vars/all/vault.yml` (encrypt with Ansible Vault)
+
+4. **Copy the ssh public key to remote server**
+
+   - 3.1 Option A:
+
+   ```bash
+   # Use ssh-copy-id - Recommended:
+   ssh-copy-id -i ~/.ssh/siem_id_rsa.pub user@external-server-ip
+   ```
+
+   - 3.2 Option B - Manual method:
+
+   ```bash
+   # Show the public key
+   cat ~/.ssh/siem_id_rsa.pub
+
+   # On the remote server:
+   ## If ssh is not configured
+   mkdir -p ~/.ssh
+   chmod 700 ~/.ssh
+
+   ## Paste the public key here
+   echo "ssh-rsa AAAAB3Nza... your_email@example.com" >> ~/.ssh/authorized_keys
+   chmod 600 ~/.ssh/authorized_keys
+   ```
+
+5. **Test Connection with Ansible**
+
+   ```bash
+   # Test the connection with Ansible to the external server
+   ansible -i inventories/hosts.ini host_name -m ping
+   ```
+
+   ```bash
+   # You should see
+   external-server | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+   }
+   ```
+
+6. **Run the SIEM Playbook**
+
+   ```bash
+   # Run complete deployment
+   ansible-playbook -i inventories/hosts.ini playbook.yml --ask-vault-pass
+   ```
+
+   ```bash
+   # Or run individual components
+   ansible-playbook playbook.yml --ask-vault-pass --tags elasticsearch
+   ansible-playbook playbook.yml --ask-vault-pass --tags kibana
+   ansible-playbook playbook.yml --ask-vault-pass --tags logstash
+   ```
+
+### 🏷️ Using Tags for Selective Deployment
+
+See `TAGS_USAGE_GUIDE.md` for detailed information on running specific components:
+
+```bash
+# Deploy only Elasticsearch
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags elasticsearch
+
+# Deploy only Kibana
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags kibana
+
+# Deploy multiple components
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags "elasticsearch,kibana,logstash"
+
+# Run system setup only
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags setup
+```
+
+---
 
 **Security:**
 
@@ -35,29 +146,33 @@ This project provides a fully automated deployment of a Security Information and
 
 ### `roles/elasticsearch`
 
-- Installs Elasticsearch
+- Installs Elasticsearch 9.0.0
 - Configures TLS for HTTP and transport
 - Generates internal CA and distributes certs
 - Creates default users and roles for secure access
+- **Ubuntu 22.04 compatible** with optimized Java 17 configuration
 
 ### `roles/kibana`
 
-- Installs Kibana
+- Installs Kibana 9.0.0
 - Configures secure connection to Elasticsearch
 - Waits for Elasticsearch readiness
 - Optionally imports prebuilt dashboards
+- **Ubuntu 22.04 compatible** with proper service configuration
 
 ### `roles/logstash`
 
-- Installs and configures Logstash
+- Installs and configures Logstash 9.0.0
 - Sets up pipelines to receive from Beats and output to Elasticsearch
 - Uses secure certificates for communication
+- **Ubuntu 22.04 compatible** with updated repository configuration
 
 ### `roles/beats` (Filebeat & Metricbeat)
 
-- Installs Filebeat and Metricbeat
+- Installs Filebeat and Metricbeat 9.0.0
 - Configures modules and output to Logstash
 - Uses CA certs for secure communication
+- **Ubuntu 22.04 compatible** with proper dependency management
 
 ### `roles/elastalert`
 
@@ -105,14 +220,27 @@ This project provides a fully automated deployment of a Security Information and
    - Edit `inventories/hosts.ini` and add your server:
      ```ini
      [siem]
-     your.server.ip ansible_user=youruser
+     your.server.ip ansible_user=youruser ....
      ```
 3. **Set variables and secrets:**
-   - Edit variables in `group_vars/` as needed
-   - Store secrets in `group_vars/all/vault.yml` (encrypt with Ansible Vault):
-     ```bash
-     ansible-vault edit group_vars/all/vault.yml
-     ```
+   Needed variables to run the setup:
+
+- elastic_password
+- kibana_system_password
+- logstash_system_password
+- kibana_encryption_key
+- logstash_password
+- smtp_password
+
+Command to encrypt a variable
+
+```bash
+# ansible-vault encrypt_string '...............' --name 'logstash_system_password'
+ansible-vault encrypt_string 'your_secret_value' --name your_variable_name
+```
+
+- Store secrets in `group_vars/all/vault.yml` (encrypt with Ansible Vault):
+
 4. **Run the playbook:**
 
 - If using vault:
@@ -195,50 +323,49 @@ All Ansible roles are designed to be idempotent:
 sudo systemctl restart elasticsearch
 sudo systemctl restart kibana
 sudo systemctl restart logstash
+sudo systemctl restart metricbeat
+sudo systemctl restart filebeat
 sudo systemctl restart elastalert
 ```
 
-**Testing Endpoints:**
-
-- **Elasticsearch:**
-  ```bash
-  curl -k -u elastic:<password> https://<es-host>:9200/
-  ```
-- **Kibana:**
-  ```bash
-  curl -k -u elastic:<password> https://<kibana-host>:5601/api/status
-  ```
-- **Logstash:**
-  - Check logs: `sudo journalctl -u logstash`
-
 ---
 
-## 📁 10. File/Directory Structure
+## 📁 10. File Structure
 
 ```
-siem-lab-native/
-├── ansible.cfg                # Ansible configuration
-├── group_vars/                # Group and global variables
-│   └── all/
-│       └── vault.yml          # Encrypted secrets (Ansible Vault)
+elk-ansible/
+├── ansible.cfg                 # Ansible configuration
+├── playbook.yml               # Main playbook for standard deployment
 ├── inventories/
-│   └── hosts.ini              # Inventory file
-├── playbook.yml               # Main playbook
-├── roles/                     # Ansible roles
-│   ├── elasticsearch/         # Elasticsearch role
-│   ├── kibana/                # Kibana role
-│   ├── logstash/              # Logstash role
-│   ├── beats/                 # Filebeat & Metricbeat role
-│   └── elastalert/            # ElastAlert2 role
-├── Vagrantfile                # (Optional) For local VM testing
-└── README.md                  # This file
+│   └── hosts.ini              # Standard inventory
+├── group_vars/
+│   └── all/
+│       └── vault.yml          # Encrypted secrets
+└── roles/
+    ├── elasticsearch/          # Elasticsearch 9.0.0 role
+    ├── kibana/                # Kibana 9.0.0 role
+    ├── logstash/              # Logstash 9.0.0 role
+    ├── beats/                 # Filebeat & Metricbeat 9.0.0 role
+    └── elastalert/            # ElastAlert2 role
 ```
 
-**Key Files:**
+---
 
-- `playbook.yml`: Entry point for Ansible
-- `group_vars/all/vault.yml`: Encrypted secrets
-- `roles/*/tasks/`: Main automation logic for each component
-- `roles/kibana/files/dashboard.ndjson`: Prebuilt dashboards
+## 🔄 11. Version Compatibility
+
+- **Elasticsearch:** 9.0.0
+- **Kibana:** 9.0.0
+- **Logstash:** 9.0.0
+- **Beats:** 9.0.0
+- **Ubuntu:** 20.04 LTS, 22.04 LTS
+- **Java:** OpenJDK 17
+- **Python:** 3.8+
 
 ---
+
+## 📞 12. Support
+
+For deployment issues:
+
+- **Standard Ubuntu:** Check this README
+- **General:** Check Ansible and Elastic documentation

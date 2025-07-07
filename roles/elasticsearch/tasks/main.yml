@@ -1,13 +1,37 @@
 # roles/elasticsearch/tasks/main.yml
 ---
-- name: Install dependencies
+- name: Install dependencies (Ubuntu 22.04 compatible)
   apt:
     name:
       - apt-transport-https
       - unzip
-      - openjdk-21-jdk
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - curl
+      - wget
     state: present
     update_cache: yes
+  become: true
+
+- name: Install Java 17 (Ubuntu 22.04 compatible)
+  apt:
+    name: openjdk-17-jdk
+    state: present
+    update_cache: yes
+  become: true
+
+- name: Set JAVA_HOME for Ubuntu 22.04
+  lineinfile:
+    path: /etc/environment
+    line: 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64'
+    state: present
+  become: true
+
+- name: Verify Java installation
+  command: java -version
+  register: java_version_check
+  changed_when: false
   become: true
 
 - name: Add Elasticsearch GPG key
@@ -16,7 +40,7 @@
     state: present
   become: true
 
-- name: Add Elasticsearch APT repo
+- name: Add Elasticsearch APT repo (Ubuntu 22.04 compatible)
   apt_repository:
     repo: "deb https://artifacts.elastic.co/packages/9.x/apt stable main"
     state: present
@@ -50,6 +74,17 @@
     - { regexp: "^-Xmx", line: "-Xmx{{ (ansible_memtotal_mb * 0.5) | int }}m" }
   become: true
 
+- name: Configure system limits for Ubuntu 22.04
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: 'vm.max_map_count', value: '262144' }
+    - { name: 'fs.file-max', value: '65536' }
+  become: true
+
 - name: Ensure Elasticsearch directories exist
   file:
     path: "{{ item }}"
@@ -62,13 +97,64 @@
     - /var/log/elasticsearch
   become: true
 
-- name: Enable memory locking in systemd
+- name: Create systemd override directory for Elasticsearch
+  file:
+    path: /etc/systemd/system/elasticsearch.service.d
+    state: directory
+    mode: 0755
+  become: true
+
+- name: Ensure Elasticsearch PID directory exists
+  file:
+    path: /var/run/elasticsearch
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+  become: true
+
+- name: Set proper permissions for Elasticsearch log directory
+  file:
+    path: /var/log/elasticsearch
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+    recurse: yes
+  become: true
+
+- name: Set proper permissions for Elasticsearch data directory
+  file:
+    path: /var/lib/elasticsearch
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+    recurse: yes
+  become: true
+
+- name: Ensure Elasticsearch can write to data directory
+  shell: |
+    chown -R elasticsearch:elasticsearch /var/lib/elasticsearch
+    chmod -R 755 /var/lib/elasticsearch
+  become: true
+
+- name: Enable memory locking and set environment variables in systemd (Ubuntu 22.04)
   lineinfile:
     path: /etc/systemd/system/elasticsearch.service.d/override.conf
     create: yes
     line: |
       [Service]
       LimitMEMLOCK=infinity
+      LimitNOFILE=65536
+      LimitNPROC=4096
+      Environment="ES_HOME=/usr/share/elasticsearch"
+      Environment="ES_PATH_CONF=/etc/elasticsearch"
+      Environment="PID_DIR=/var/run/elasticsearch"
+      Environment="ES_SD_NOTIFY=true"
+      Environment="JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
+      User=elasticsearch
+      Group=elasticsearch
   become: true
 
 - name: Reload systemd
@@ -98,8 +184,79 @@
     daemon_reload: true
   become: true
 
+- name: Wait for Elasticsearch to be ready (without auth)
+  uri:
+    url: "https://localhost:9200/_cluster/health"
+    method: GET
+    validate_certs: false
+    status_code: [200, 401, 403]
+  register: elasticsearch_health
+  retries: 30
+  delay: 10
+  until: elasticsearch_health.status in [200, 401, 403]
+  become: true
+
+- name: Restart Elasticsearch to apply all configuration changes
+  systemd:
+    name: elasticsearch
+    state: restarted
+    daemon_reload: true
+  become: true
+
+- name: Wait for Elasticsearch to be ready after restart (without auth)
+  uri:
+    url: "https://localhost:9200/_cluster/health"
+    method: GET
+    validate_certs: false
+    status_code: [200, 401, 403]
+  register: elasticsearch_health_restart
+  retries: 30
+  delay: 10
+  until: elasticsearch_health_restart.status in [200, 401, 403]
+  become: true
+
+- name: Ensure Python dependency 'pexpect' is installed (Ubuntu 22.04)
+  apt:
+    name: 
+      - python3-pexpect
+      - python3-pip
+      - python3-requests
+    state: present
+  become: true
+  
 # Set up built-in user passwords if not already set
-- name: Check if elastic password is already set
+- name: Set elastic user password via interactive reset
+  expect:
+    command: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic --interactive --url https://elasticsearch.local:9200
+    responses:
+      "Please confirm that you would like to continue \\[y/N\\]" : "y"
+      "Enter password for \\[elastic\\]:" : "{{ elastic_password }}"
+      "Re-enter password for \\[elastic\\]:" : "{{ elastic_password }}"
+  become: true
+
+- name: Set kibana_system user password
+  expect:
+    command: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u kibana_system --interactive --url https://elasticsearch.local:9200
+    responses:
+      "Please confirm that you would like to continue \\[y/N\\]" : "y"
+      "Enter password for \\[kibana_system\\]:" : "{{ kibana_system_password }}"
+      "Re-enter password for \\[kibana_system\\]:" : "{{ kibana_system_password }}"
+  become: true
+
+- name: Set logstash_system user password
+  expect:
+    command: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u logstash_system --interactive --url https://elasticsearch.local:9200
+    responses:
+      "Please confirm that you would like to continue \\[y/N\\]" : "y"
+      "Enter password for \\[logstash_system\\]:" : "{{ logstash_system_password }}"
+      "Re-enter password for \\[logstash_system\\]:" : "{{ logstash_system_password }}"
+  become: true
+
+- name: Debug reset password result
+  debug:
+    var: reset_pw_result
+
+- name: Verify elastic password is working
   uri:
     url: "https://localhost:9200/_security/_authenticate"
     method: GET
@@ -107,26 +264,38 @@
     password: "{{ elastic_password }}"
     validate_certs: false
     status_code: 200
-  register: elastic_pw_check
-  failed_when: false
-  changed_when: false
-
-- name: Run elasticsearch-setup-passwords if password is not set
-  shell: |
-    echo -e '{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}\n{{ elastic_password }}' \
-    | /usr/share/elasticsearch/bin/elasticsearch-setup-passwords interactive --batch --url https://localhost:9200
-  args:
-    creates: /etc/elasticsearch/.passwords_set
-  when: elastic_pw_check.status != 200
+  register: final_pw_check
+  retries: 5
+  delay: 5
+  until: final_pw_check.status == 200
   become: true
-  register: setup_pw_result
-  notify: mark passwords as set
 
-- name: Mark that passwords have been set
-  copy:
-    content: "done"
-    dest: /etc/elasticsearch/.passwords_set
-  when: setup_pw_result is changed
+- name: Verify kibana_system password is working
+  uri:
+    url: "https://localhost:9200/_security/_authenticate"
+    method: GET
+    user: "kibana_system"
+    password: "{{ kibana_system_password }}"
+    validate_certs: false
+    status_code: 200
+  register: kibana_pw_check
+  retries: 5
+  delay: 5
+  until: kibana_pw_check.status == 200
+  become: true
+
+- name: Verify logstash_system password is working
+  uri:
+    url: "https://localhost:9200/_security/_authenticate"
+    method: GET
+    user: "logstash_system"
+    password: "{{ logstash_system_password }}"
+    validate_certs: false
+    status_code: 200
+  register: logstash_pw_check
+  retries: 5
+  delay: 5
+  until: logstash_pw_check.status == 200
   become: true
 
 - name: Create Logstash Writer Role and User in Elasticsearch

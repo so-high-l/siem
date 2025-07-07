@@ -28,10 +28,3 @@
     daemon_reload: yes
   become: true
 
-- name: Test Filebeat monitoring connection to Elasticsearch
-  command: filebeat test output
-  register: filebeat_output_test
-  retries: 3
-  delay: 10
-  until: filebeat_output_test.rc == 0
-  changed_when: false

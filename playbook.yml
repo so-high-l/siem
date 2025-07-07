@@ -1,9 +1,78 @@
 - name: Deploy ELK Stack, Beats, ElastAlert
-  hosts: elk
+  hosts: gcp
   become: true
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      become: true
+      tags: [always, setup]
+
+    - name: Install required system packages for Ubuntu 22.04
+      apt:
+        name:
+          - python3
+          - python3-pip
+          - python3-apt
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - curl
+          - wget
+          - unzip
+        state: present
+        update_cache: yes
+      become: true
+      tags: [always, setup]
+
+    - name: Configure system limits for ELK stack on Ubuntu 22.04
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        state: present
+        reload: yes
+      loop:
+        - { name: 'vm.max_map_count', value: '262144' }
+        - { name: 'fs.file-max', value: '65536' }
+        - { name: 'net.core.somaxconn', value: '65536' }
+        - { name: 'net.ipv4.tcp_max_syn_backlog', value: '65536' }
+      become: true
+      tags: [always, setup]
+
+    - name: Make system limits persistent
+      lineinfile:
+        path: /etc/security/limits.conf
+        line: "{{ item }}"
+        state: present
+      loop:
+        - "elasticsearch soft memlock unlimited"
+        - "elasticsearch hard memlock unlimited"
+        - "elasticsearch soft nofile 65536"
+        - "elasticsearch hard nofile 65536"
+        - "elasticsearch soft nproc 4096"
+        - "elasticsearch hard nproc 4096"
+        - "kibana soft nofile 65536"
+        - "kibana hard nofile 65536"
+        - "logstash soft nofile 65536"
+        - "logstash hard nofile 65536"
+      become: true
+      tags: [always, setup]
+
   roles:
-    - ./roles/elasticsearch
-    - ./roles/kibana
-    - ./roles/logstash
-    - ./roles/beats
-    - ./roles/elastalert
+    - role: ./roles/elasticsearch
+      tags: [elasticsearch, elk]
+
+    - role: ./roles/kibana
+      tags: [kibana, elk]
+
+    - role: ./roles/logstash
+      tags: [logstash, elk]
+
+    - role: ./roles/beats
+      tags: [beats, elk]
+
+    - role: ./roles/elastalert
+      tags: [elastalert, elk]
