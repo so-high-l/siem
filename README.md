@@ -62,14 +62,14 @@ ansible-vault encrypt_string 'your_secret_value' --name your_variable_name
 
 4. **Copy the ssh public key to remote server**
 
-   - 3.1 Option A:
+   - 4.1 Option A:
 
    ```bash
    # Use ssh-copy-id - Recommended:
    ssh-copy-id -i ~/.ssh/siem_id_rsa.pub user@external-server-ip
    ```
 
-   - 3.2 Option B - Manual method:
+   - 4.2 Option B - Manual method:
 
    ```bash
    # Show the public key
@@ -213,8 +213,8 @@ ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags s
 
 1. **Clone the repository:**
    ```bash
-   git clone <repo-url>
-   cd siem-lab-native
+   git clone https://github.com/so-high-l/siem
+   cd siem
    ```
 2. **Edit inventory:**
    - Edit `inventories/hosts.ini` and add your server:
@@ -363,9 +363,3 @@ elk-ansible/
 
 ---
 
-## 📞 12. Support
-
-For deployment issues:
-
-- **Standard Ubuntu:** Check this README
-- **General:** Check Ansible and Elastic documentation
