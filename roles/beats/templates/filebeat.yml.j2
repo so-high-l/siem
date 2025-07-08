@@ -64,7 +64,25 @@ filebeat.inputs:
         pattern: '^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}'
         negate: true
         match: after
- 
+
+- type: filestream
+  id: nginx-access
+  enabled: true
+  paths:
+    - /var/log/nginx/access.log
+  fields:
+    log_type: nginx_access
+  fields_under_root: true
+
+- type: filestream
+  id: nginx-error
+  enabled: true
+  paths:
+    - /var/log/nginx/error.log
+  fields:
+    log_type: nginx_error
+  fields_under_root: true
+
 # ============================== Filebeat modules ==============================
 
 filebeat.config.modules:

@@ -57,6 +57,17 @@
   notify: Restart Logstash
   become: true
 
+# Deploy nginx pipeline
+- name: Deploy Logstash Nginx pipeline configuration
+  template:
+    src: nginx-pipeline.conf.j2
+    dest: /etc/logstash/conf.d/nginx-pipeline.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Logstash
+  become: true
+
 - name: Copy Logstash pipeline registry
   template:
     src: pipelines.yml.j2

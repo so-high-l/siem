@@ -1,0 +1,45 @@
+input {
+  beats {
+    port => 5044
+    ssl_enabled => true
+    ssl_certificate => "/etc/logstash/certs/http.crt"
+    ssl_key => "/etc/logstash/certs/http.key"
+  }
+}
+
+filter {
+  grok {
+    match => { "message" => '%{IP:client_ip} - - \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{URIPATH:request_path}(?:%{URIPARAM:query_string})? HTTP/%{NUMBER:http_version}" %{NUMBER:status_code:int} %{NUMBER:bytes:int} "-" "%{DATA:user_agent}"' }
+  }
+
+  date {
+    match => [ "timestamp", "dd/MMM/yyyy:HH:mm:ss Z" ]
+    target => "@timestamp"
+    remove_field => [ "timestamp" ]
+  }
+
+  useragent {
+    source => "user_agent"
+    target => "user_agent_parsed"
+  }
+
+  if [fields][log_type] == "nginx_access" {
+    mutate { add_field => { "log_type" => "nginx_access" } }
+  } else if [fields][log_type] == "nginx_error" {
+    mutate { add_field => { "log_type" => "nginx_error" } }
+  }
+}
+
+output {
+  if [log_type] == "nginx_access" or [log_type] == "nginx_error" {
+    elasticsearch {
+      hosts => ["https://elasticsearch.local:9200"]
+      index => "nginx-logs-%{+YYYY.MM.dd}"
+      user => "logstash_internal"
+      password => "{{ logstash_password }}"
+      ssl_verification_mode => "full" 
+      ssl_enabled => true
+      ssl_certificate_authorities  => "/etc/logstash/certs/ca.crt"
+    }
+  }
+} 
