@@ -1,5 +1,5 @@
 - name: Deploy ELK Stack, Beats, ElastAlert
-  hosts: gcp
+  hosts: sbltestserver
   become: true
   pre_tasks:
     - name: Update apt cache

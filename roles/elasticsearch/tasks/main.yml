@@ -63,15 +63,15 @@
     mode: 0660
   become: true
 
-- name: Set JVM heap size to 50% of system memory
+- name: Set JVM heap size to 1 GB
   lineinfile:
     path: /etc/elasticsearch/jvm.options
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
     create: yes
   loop:
-    - { regexp: "^-Xms", line: "-Xms{{ (ansible_memtotal_mb * 0.5) | int }}m" }
-    - { regexp: "^-Xmx", line: "-Xmx{{ (ansible_memtotal_mb * 0.5) | int }}m" }
+    - { regexp: '^-Xms', line: '-Xms1g' }
+    - { regexp: '^-Xmx', line: '-Xmx1g' }
   become: true
 
 - name: Configure system limits for Ubuntu 22.04

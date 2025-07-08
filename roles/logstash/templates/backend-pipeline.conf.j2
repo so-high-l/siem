@@ -1,7 +1,7 @@
 input {
   beats {
     port => 5044
-    ssl => true
+    ssl_enabled => true
     ssl_certificate => "/etc/logstash/certs/http.crt"
     ssl_key => "/etc/logstash/certs/http.key"
   }
@@ -176,8 +176,9 @@ output {
       index => "sqlalchemy-logs-%{+YYYY.MM.dd}"
       user => "logstash_internal"
       password => "{{ logstash_password }}"
-      ssl => true
-      cacert => "/etc/logstash/certs/ca.crt"
+      ssl_verification_mode => "full"
+      ssl_enabled => true
+      ssl_certificate_authorities  => "/etc/logstash/certs/ca.crt"
     }
   } else if [logger] == "werkzeug" {
     elasticsearch {
@@ -185,9 +186,9 @@ output {
       index => "werkzeug-logs-%{+YYYY.MM.dd}"
       user => "logstash_internal"
       password => "{{ logstash_password }}"
-      ssl_certificate_verification => true
-      ssl => true
-      cacert => "/etc/logstash/certs/ca.crt"
+      ssl_verification_mode => "full" 
+      ssl_enabled => true
+      ssl_certificate_authorities  => "/etc/logstash/certs/ca.crt"
     }
   } else {
     elasticsearch {
@@ -195,8 +196,9 @@ output {
       index => "unclassified-logs-%{+YYYY.MM.dd}"
       user => "logstash_internal"
       password => "{{ logstash_password }}"
-      ssl => true
-      cacert => "/etc/logstash/certs/ca.crt"
+      ssl_verification_mode => "full"
+      ssl_enabled => true
+      ssl_certificate_authorities  => "/etc/logstash/certs/ca.crt"
     }
   }
 }
