@@ -9,7 +9,7 @@ input {
 
 filter {
   grok {
-    match => { "message" => '%{IP:client_ip} - - \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{URIPATH:request_path}(?:%{URIPARAM:query_string})? HTTP/%{NUMBER:http_version}" %{NUMBER:status_code:int} %{NUMBER:bytes:int} "-" "%{DATA:user_agent}"' }
+    match => { "message" => '%{IP:client_ip} - - \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{URIPATH:request_path}(?:\?%{NOTSPACE:query_string})? HTTP/%{NUMBER:http_version}" %{NUMBER:status_code:int} %{NUMBER:bytes:int} "(?:%{URI:referer}|-)" "%{DATA:user_agent}"' }
   }
 
   date {
