@@ -8,6 +8,10 @@ input {
 }
 
 filter {
+
+  if [log_type] =~ /^nginx_/ {
+    drop { }
+  }
   if [log_type] == "backend_logs" {
     mutate {
       gsub => [

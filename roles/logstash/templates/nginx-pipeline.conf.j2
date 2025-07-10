@@ -1,6 +1,6 @@
 input {
   beats {
-    port => 5044
+    port => 5045
     ssl_enabled => true
     ssl_certificate => "/etc/logstash/certs/http.crt"
     ssl_key => "/etc/logstash/certs/http.key"
@@ -8,27 +8,48 @@ input {
 }
 
 filter {
-  grok {
-    match => { "message" => '%{IP:client_ip} - - \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{URIPATH:request_path}(?:\?%{NOTSPACE:query_string})? HTTP/%{NUMBER:http_version}" %{NUMBER:status_code:int} %{NUMBER:bytes:int} "(?:%{URI:referer}|-)" "%{DATA:user_agent}"' }
-  }
+  if "nginx_access" in [fields][log_type] {
+    grok {
+      match => { "message" => '%{IP:client_ip} - - \[%{HTTPDATE:timestamp}\] "%{WORD:request_method} %{URIPATH:request_path}(?:\?%{NOTSPACE:query_string})? HTTP/%{NUMBER:http_version}" %{NUMBER:status_code:int} %{NUMBER:bytes:int} "(?:%{URI:referer}|-)" "%{DATA:user_agent}"' }
+      tag_on_failure => ["_grokparsefailure_access"]
+    }
 
-  date {
-    match => [ "timestamp", "dd/MMM/yyyy:HH:mm:ss Z" ]
-    target => "@timestamp"
-    remove_field => [ "timestamp" ]
-  }
+    date {
+      match => [ "timestamp", "dd/MMM/yyyy:HH:mm:ss Z" ]
+      target => "@timestamp"
+      remove_field => [ "timestamp" ]
+    }
 
-  useragent {
-    source => "user_agent"
-    target => "user_agent_parsed"
-  }
+    useragent {
+      source => "user_agent"
+      target => "user_agent_parsed"
+    }
 
-  if [fields][log_type] == "nginx_access" {
-    mutate { add_field => { "log_type" => "nginx_access" } }
-  } else if [fields][log_type] == "nginx_error" {
-    mutate { add_field => { "log_type" => "nginx_error" } }
+    mutate {
+      add_field => { "log_type" => "nginx_access" }
+    }
+
+  } else if "nginx_error" in [fields][log_type] {
+    grok {
+      match => {
+        "message" => '%{YEAR:year}/%{MONTHNUM:month}/%{MONTHDAY:day} %{TIME:time} \[%{LOGLEVEL:level}\] %{GREEDYDATA:error_meta}, client: %{IP:client_ip}, server: %{DATA:server}, request: "(?<request_method>\S+) (?<request_path>\S+)(?: HTTP/%{NUMBER:http_version})?", host: "%{HOSTPORT:host}"'
+      }
+      tag_on_failure => ["_grokparsefailure_error"]
+    }
+
+    mutate {
+      add_field => { "log_type" => "nginx_error" }
+      add_field => { "@timestamp" => "%{year}-%{month}-%{day} %{time}" }
+    }
+
+    date {
+      match => ["@timestamp", "yyyy-MM-dd HH:mm:ss"]
+      target => "@timestamp"
+      remove_field => [ "year", "month", "day", "time" ]
+    }
   }
 }
+
 
 output {
   if [log_type] == "nginx_access" or [log_type] == "nginx_error" {
