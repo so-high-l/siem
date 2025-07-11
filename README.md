@@ -101,17 +101,19 @@ ansible-vault encrypt_string 'your_secret_value' --name your_variable_name
    ```
 
 6. **Run the SIEM Playbook**
+The --ask-become-pass is used to pass the sudo password for tasks that need sudo previleges 
+The --ask-vault-pass is used to pass the vault password that was used during enryption of secrets
 
    ```bash
    # Run complete deployment
-   ansible-playbook -i inventories/hosts.ini playbook.yml --ask-vault-pass
+   ansible-playbook -i inventories/hosts.ini playbook.yml --ask-vault-pass --ask-become-pass
    ```
 
    ```bash
    # Or run individual components
-   ansible-playbook playbook.yml --ask-vault-pass --tags elasticsearch
-   ansible-playbook playbook.yml --ask-vault-pass --tags kibana
-   ansible-playbook playbook.yml --ask-vault-pass --tags logstash
+   ansible-playbook playbook.yml --ask-vault-pass --ask-become-pass --tags elasticsearch
+   ansible-playbook playbook.yml --ask-vault-pass --ask-become-pass --tags kibana
+   ansible-playbook playbook.yml --ask-vault-pass --ask-become-pass --tags logstash
    ```
 
 ### 🏷️ Using Tags for Selective Deployment
@@ -120,16 +122,16 @@ See `TAGS_USAGE_GUIDE.md` for detailed information on running specific component
 
 ```bash
 # Deploy only Elasticsearch
-ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags elasticsearch
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --ask-become-pass --tags elasticsearch
 
 # Deploy only Kibana
-ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags kibana
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --ask-become-pass --tags kibana
 
 # Deploy multiple components
-ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags "elasticsearch,kibana,logstash"
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --ask-become-pass --tags "elasticsearch,kibana,logstash"
 
 # Run system setup only
-ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags setup
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --ask-become-pass --tags setup
 ```
 
 ---
@@ -245,7 +247,7 @@ ansible-vault encrypt_string 'your_secret_value' --name your_variable_name
 
 - If using vault:
   ```bash
-  ansible-playbook --ask-vault-pass -i inventories/hosts.ini playbook.yml
+  ansible-playbook --ask-vault-pass --ask-become-pass -i inventories/hosts.ini playbook.yml
   ```
 
 **Tips:**
@@ -362,4 +364,3 @@ elk-ansible/
 - **Python:** 3.8+
 
 ---
-
