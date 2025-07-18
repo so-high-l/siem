@@ -221,10 +221,10 @@ ansible-playbook playbook.yml --ask-vault-pass --tags beats
 ansible-playbook playbook.yml --ask-vault-pass --tags elastalert
 
 # System operations
-ansible-playbook playbook.yml --ask-vault-pass --tags setup
-ansible-playbook playbook.yml --ask-vault-pass --tags verification
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --ask-become-pass --tags setup
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --ask-become-pass --tags verification
 
 # Multiple components
-ansible-playbook playbook.yml --ask-vault-pass --tags "elasticsearch,kibana"
-ansible-playbook playbook.yml --ask-vault-pass --tags "setup,elasticsearch,logstash"
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags "elasticsearch,kibana"
+ansible-playbook playbook.yml -i inventories/hosts.ini --ask-vault-pass --tags "setup,elasticsearch,logstash"
 ```
