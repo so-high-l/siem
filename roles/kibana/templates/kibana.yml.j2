@@ -1,7 +1,7 @@
 server.name: kibana
 server.port: 5601
 server.host: "0.0.0.0"
-server.publicBaseUrl: "https://192.168.56.200:5601"
+server.publicBaseUrl: "{{ kibana_public_base_url }}"
 
 elasticsearch.hosts: ["https://elasticsearch.local:9200"]
 elasticsearch.username: "kibana_system"

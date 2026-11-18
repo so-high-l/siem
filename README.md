@@ -89,7 +89,7 @@ ansible-vault encrypt_string 'your_secret_value' --name your_variable_name
 
    ```bash
    # Test the connection with Ansible to the external server
-   ansible -i inventories/hosts.ini host_name -m ping
+   ansible -i inventories/hosts.ini elk_host -m ping
    ```
 
    ```bash

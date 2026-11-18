@@ -11,5 +11,5 @@ elasticsearch_port: 9200
 smtp_auth_file: "/opt/elastalert/smtp_auth.yaml"
 smtp_host: "smtp.gmail.com"
 smtp_port: 587  
-smtp_user: "elmahdanisouhail@gmail.com"
-target_email: "elmahdanisouhailpro@gmail.com"
+smtp_user: "your_email@example.com"
+target_email: "recipient@example.com"
